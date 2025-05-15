@@ -1,10 +1,18 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing import List
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+
+from data import SessionLocal, engine
+import models
+import crud
+import schemas
+
+# Crée les tables si elles n'existent pas déjà
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+# Middleware CORS pour permettre les appels du frontend (React)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -12,35 +20,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class Task(BaseModel):
-    id: int
-    title: str
-    done: bool = False
+# Dépendance pour fournir une session DB à chaque requête
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-# fake DB
-tasks = []
+@app.get("/tasks", response_model=list[schemas.Task])
+def list_tasks(db: Session = Depends(get_db)):
+    return crud.get_tasks(db)
 
-@app.get("/tasks", response_model=List[Task])
-def list_tasks():
-    return tasks
+@app.post("/tasks", response_model=schemas.Task)
+def create_task(task: schemas.TaskCreate, db: Session = Depends(get_db)):
+    return crud.add_task(db, task)
 
-@app.post("/tasks", response_model=Task)
-def create_task(task: Task):
-    tasks.append(task)
-    return task
-
-@app.put("/tasks/{task_id}", response_model=Task)
-def update_task(task_id: int, updated_task: Task):
-    for index, task in enumerate(tasks):
-        if task.id == task_id:
-            tasks[index] = updated_task
-            return updated_task
-    raise HTTPException(status_code=404, detail="Task not found")
+@app.put("/tasks/{task_id}", response_model=schemas.Task)
+def update_task(task_id: int, updated_task: schemas.Task, db: Session = Depends(get_db)):
+    return crud.update_task(db, task_id, updated_task)
 
 @app.delete("/tasks/{task_id}")
-def delete_task(task_id: int):
-    global tasks
-    tasks = [t for t in tasks if t.id != task_id]
-    return {"ok": True}
-
-# uvicorn main:app --reload
+def delete_task(task_id: int, db: Session = Depends(get_db)):
+    return crud.delete_task(db, task_id)
