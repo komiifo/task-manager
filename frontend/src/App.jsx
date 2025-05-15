@@ -23,7 +23,6 @@ function App() {
   // Créer une nouvelle tâche
   const addTask = async () => {
     const newTask = {
-      id: Date.now(), // ID unique basé sur la date
       title: newTitle,
       done: false,
     };
@@ -63,50 +62,63 @@ function App() {
     loadTasks();
   };
 
-  // Chargement initial des tâches 
+  // Chargement initial des tâches
   useEffect(() => {
     loadTasks();
   }, []);
 
   return (
-    <div style={{ padding: "1rem" }}>
-      <h1>📝 Mes tâches</h1>
-
-      {/* Champ de création de tâche */}
-      <input
-        value={newTitle}
-        onChange={(e) => setNewTitle(e.target.value)}
-        placeholder="Nouvelle tâche"
-      />
-      <button onClick={addTask}>Ajouter</button>
-
-      {/* Liste des tâches */}
-      <ul style={{ listStyle: "none", padding: 0 }}>
+    <div className="min-h-screen bg-gray-100 p-6">
+      <h1 className="text-3xl font-bold text-center mb-6">📝 Mes tâches</h1>
+      <div className="flex justify-center mb-4 gap-2">
+        <input
+          className="border rounded px-2 py-1 w-1/2"
+          value={newTitle}
+          onChange={(e) => setNewTitle(e.target.value)}
+          placeholder="Nouvelle tâche"
+        />
+        <button
+          onClick={addTask}
+          className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600"
+        >
+          Ajouter
+        </button>
+      </div>
+      <ul className="max-w-xl mx-auto space-y-2">
         {tasks.map((t) => (
           <li
             key={t.id}
-            onDoubleClick={() => startEditing(t)} // Double-clic pour éditer
-            style={{ margin: "0.5rem 0" }}
+            onDoubleClick={() => startEditing(t)}
+            className="bg-white px-4 py-2 shadow rounded flex justify-between items-center"
           >
             {editingId === t.id ? (
-              // Mode édition actif
-              <>
+              <div className="flex gap-2 w-full">
                 <input
+                  className="border px-2 py-1 flex-grow"
                   value={editingTitle}
                   onChange={(e) => setEditingTitle(e.target.value)}
                 />
-                <button onClick={() => confirmEditing(t.id)}>OK</button>
-                <button onClick={cancelEditing}>Annuler</button>
-              </>
+                <button
+                  onClick={() => confirmEditing(t.id)}
+                  className="bg-green-500 text-white px-2 rounded"
+                >
+                  OK
+                </button>
+                <button
+                  onClick={cancelEditing}
+                  className="bg-gray-400 text-white px-2 rounded"
+                >
+                  Annuler
+                </button>
+              </div>
             ) : (
-              // Mode lecture seule
               <>
                 <span>{t.title}</span>
                 <button
-                  style={{ marginLeft: "1rem" }}
                   onClick={() => deleteTask(t.id)}
+                  className="text-red-500 hover:underline"
                 >
-                  ❌
+                  Supprimer
                 </button>
               </>
             )}
